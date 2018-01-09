@@ -1,5 +1,6 @@
 package com.example.silvee.photogallery;
 
+import android.graphics.drawable.Drawable;
 import android.os.AsyncTask;
 import android.os.Bundle;
 import android.support.annotation.Nullable;
@@ -10,6 +11,7 @@ import android.util.Log;
 import android.view.LayoutInflater;
 import android.view.View;
 import android.view.ViewGroup;
+import android.widget.ImageView;
 import android.widget.TextView;
 
 import java.util.ArrayList;
@@ -24,6 +26,7 @@ public class PhotoGalleryFragment extends Fragment {
 
     private RecyclerView recyclerView;
     private List<GalleryItem> galleryItems = new ArrayList<>();
+    private ThumbnailDownloader<PhotoHolder> thumbnailDownloader;
 
     public Fragment newInstance() {
         return new PhotoGalleryFragment();
@@ -34,6 +37,11 @@ public class PhotoGalleryFragment extends Fragment {
         super.onCreate(savedInstanceState);
         setRetainInstance(true);
         new FetchDataAsyncTask().execute();
+
+        thumbnailDownloader = new ThumbnailDownloader<>();
+        thumbnailDownloader.start();
+        thumbnailDownloader.getLooper();
+        Log.i(TAG, "thumbnailDownloader thread started");
     }
 
     @Nullable
@@ -46,26 +54,34 @@ public class PhotoGalleryFragment extends Fragment {
         return view;
     }
 
+    @Override
+    public void onDestroy() {
+        super.onDestroy();
+        thumbnailDownloader.quit();
+        Log.i(TAG, "thumbnailDownloader thread finished");
+    }
+
     private void setupAdapter() {
         if (isAdded()) {
             recyclerView.setAdapter(new PhotoAdapter(galleryItems));
         }
     }
 
+    // ViewHolder
     private class PhotoHolder extends RecyclerView.ViewHolder {
-        private TextView titleTextView;
-
+        private ImageView imageView;
         
         public PhotoHolder(View itemView) {
             super(itemView);
-            titleTextView = (TextView) itemView;
+            imageView = itemView.findViewById(R.id.item_image_view);
         }
 
-        public void bindItem(GalleryItem item) {
-            titleTextView.setText(item.getTitle());
+        public void bindItem(Drawable drawable) {
+            imageView.setImageDrawable(drawable);
         }
     }
 
+    // Adapter
     private class PhotoAdapter extends RecyclerView.Adapter<PhotoHolder> {
         private List<GalleryItem> items;
 
@@ -75,13 +91,18 @@ public class PhotoGalleryFragment extends Fragment {
 
         @Override
         public PhotoHolder onCreateViewHolder(ViewGroup parent, int viewType) {
-            return new PhotoHolder(new TextView(getActivity()));
+            LayoutInflater inflater = LayoutInflater.from(getActivity());
+            View view = inflater.inflate(R.layout.gallery_item, parent, false);
+            return new PhotoHolder(view);
         }
 
         @Override
         public void onBindViewHolder(PhotoHolder holder, int position) {
             GalleryItem galleryItem = items.get(position);
-            holder.bindItem(galleryItem);
+            Drawable drawable = getResources().getDrawable(R.drawable.ic_launcher_foreground);
+            holder.bindItem(drawable);
+            thumbnailDownloader.queueThumbnail(holder, galleryItem.getUrlString());
+
         }
 
         @Override
