@@ -12,11 +12,8 @@ import android.view.View;
 import android.view.ViewGroup;
 import android.widget.TextView;
 
-import java.io.IOException;
 import java.util.ArrayList;
 import java.util.List;
-
-import static android.webkit.ConsoleMessage.MessageLevel.LOG;
 
 /**
  * Created by silvee on 08.01.2018.
@@ -99,7 +96,7 @@ public class PhotoGalleryFragment extends Fragment {
         @Override
         protected List<GalleryItem> doInBackground(Void... voids) {
             Log.d(TAG, "IN BACKGROUND");
-            return new FlickrFetcher().fetchItems();
+            return new ImageFetcher().fetchItems();
         }
 
         // Do in main thread

@@ -19,7 +19,7 @@ import java.util.List;
  * Created by silvee on 08.01.2018.
  */
 
-public class FlickrFetcher {
+public class ImageFetcher {
     private static final String TAG = "FlickrFetchr";
     private static final String CLIENT_ID = "52ffd721097c4a0";
 
