@@ -23,6 +23,17 @@ public class ImageFetcher {
     private static final String TAG = "FlickrFetchr";
     private static final String CLIENT_ID = "52ffd721097c4a0";
 
+    private static final String URL_SEARCH = "https://api.imgur.com/3/gallery/search/";
+    private static final String URL_RANDOM = "https://api.imgur.com/3/gallery/random/random/";
+
+    private static final Uri ENDPOINT = Uri
+            .parse("https://api.imgur.com/3/gallery/")
+            .buildUpon()
+            .appendQueryParameter("format", "json")
+            .appendQueryParameter("nojsoncallback", "1")
+            .appendQueryParameter("extras", "url_s")
+            .build();
+
     public byte[] getUrlBytes(String urlString) throws IOException {
         URL url = new URL(urlString);
         HttpURLConnection connection = (HttpURLConnection) url.openConnection();
@@ -53,19 +64,39 @@ public class ImageFetcher {
         return new String(getUrlBytes(url));
     }
 
-    public List<GalleryItem> fetchItems() {
+    private String buildUrl(String method, String query) {
+        String url = method;
+
+        if (method.equals(URL_SEARCH)) {
+            url = Uri.parse(method)
+                   .buildUpon()
+                   .appendQueryParameter("q", query)
+                   .appendQueryParameter("client_id", CLIENT_ID)
+                   .build().toString();
+        }
+
+        if (method.equals(URL_RANDOM)) {
+            url = Uri.parse(method)
+                    .buildUpon()
+                    .appendQueryParameter("client_id", CLIENT_ID)
+                    .build().toString();
+        }
+        return url;
+    }
+
+    public List<GalleryItem> fetchRandomImages() {
+        String url = buildUrl(URL_RANDOM, null);
+        return fetchItems(url);
+    }
+    public List<GalleryItem> searchImages(String query) {
+        String url = buildUrl(URL_SEARCH, query);
+        return fetchItems(url);
+    }
+
+    private List<GalleryItem> fetchItems(String url) {
         List<GalleryItem> items = new ArrayList<>();
 
         try {
-            String url = Uri.parse("https://api.imgur.com/3/gallery/random/random/")
-                    .buildUpon()
-//                    .appendQueryParameter("method", "flickr.photos.getRecent")
-//                    .appendQueryParameter("api_key", API_KEY)
-                      .appendQueryParameter("client_id", CLIENT_ID)
-//                    .appendQueryParameter("format", "json")
-//                    .appendQueryParameter("nojsoncallback", "1")
-//                    .appendQueryParameter("extras", "url_s")
-                    .build().toString();
             String jsonString = getUrlString(url);
             Log.i(TAG, "Received JSON: " + jsonString);
             Log.i(TAG, "JSONString length: " + jsonString.length());

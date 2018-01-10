@@ -12,6 +12,8 @@ import android.support.v7.widget.GridLayoutManager;
 import android.support.v7.widget.RecyclerView;
 import android.util.Log;
 import android.view.LayoutInflater;
+import android.view.Menu;
+import android.view.MenuInflater;
 import android.view.View;
 import android.view.ViewGroup;
 import android.widget.ImageView;
@@ -39,6 +41,7 @@ public class PhotoGalleryFragment extends Fragment {
     public void onCreate(@Nullable Bundle savedInstanceState) {
         super.onCreate(savedInstanceState);
         setRetainInstance(true);
+        setHasOptionsMenu(true);
         new FetchDataAsyncTask().execute();
 
         Handler responseHandler = new Handler(); // handler in main thread
@@ -79,6 +82,12 @@ public class PhotoGalleryFragment extends Fragment {
         super.onDestroy();
         thumbnailDownloader.quit();
         Log.i(TAG, "thumbnailDownloader thread finished");
+    }
+
+    @Override
+    public void onCreateOptionsMenu(Menu menu, MenuInflater inflater) {
+        super.onCreateOptionsMenu(menu, inflater);
+        inflater.inflate(R.menu.fragment_photo_gallery, menu);
     }
 
     private void setupAdapter() {
@@ -137,7 +146,8 @@ public class PhotoGalleryFragment extends Fragment {
         @Override
         protected List<GalleryItem> doInBackground(Void... voids) {
             Log.d(TAG, "IN BACKGROUND");
-            return new ImageFetcher().fetchItems();
+
+            return new ImageFetcher().searchImages("ball");
         }
 
         // Do in main thread
