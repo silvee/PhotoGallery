@@ -1,8 +1,11 @@
 package com.example.silvee.photogallery;
 
+import android.graphics.Bitmap;
+import android.graphics.drawable.BitmapDrawable;
 import android.graphics.drawable.Drawable;
 import android.os.AsyncTask;
 import android.os.Bundle;
+import android.os.Handler;
 import android.support.annotation.Nullable;
 import android.support.v4.app.Fragment;
 import android.support.v7.widget.GridLayoutManager;
@@ -38,7 +41,17 @@ public class PhotoGalleryFragment extends Fragment {
         setRetainInstance(true);
         new FetchDataAsyncTask().execute();
 
-        thumbnailDownloader = new ThumbnailDownloader<>();
+        Handler responseHandler = new Handler(); // handler in main thread
+        thumbnailDownloader = new ThumbnailDownloader<>(responseHandler);
+
+        thumbnailDownloader.setThumbnailDownloaderListener(new ThumbnailDownloader.ThumbnailDownloaderListener<PhotoHolder>() {
+            @Override
+            public void onThumbnailDownloaded(PhotoHolder target, Bitmap thumbnail) {
+                Drawable drawable = new BitmapDrawable(getResources(), thumbnail);
+                target.bindItem(drawable);
+            }
+        });
+
         thumbnailDownloader.start();
         thumbnailDownloader.getLooper();
         Log.i(TAG, "thumbnailDownloader thread started");
@@ -52,6 +65,13 @@ public class PhotoGalleryFragment extends Fragment {
         recyclerView.setLayoutManager(new GridLayoutManager(getActivity(), 3));
         setupAdapter();
         return view;
+    }
+
+    // Clear message queue if fragment destroyed
+    @Override
+    public void onDestroyView() {
+        super.onDestroyView();
+        thumbnailDownloader.clearQueue();
     }
 
     @Override
