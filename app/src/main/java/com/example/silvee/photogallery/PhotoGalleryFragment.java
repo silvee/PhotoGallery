@@ -1,5 +1,6 @@
 package com.example.silvee.photogallery;
 
+import android.content.Intent;
 import android.graphics.Bitmap;
 import android.graphics.drawable.BitmapDrawable;
 import android.graphics.drawable.Drawable;
@@ -35,7 +36,7 @@ public class PhotoGalleryFragment extends Fragment {
     private List<GalleryItem> galleryItems = new ArrayList<>();
     private ThumbnailDownloader<PhotoHolder> thumbnailDownloader;
 
-    public Fragment newInstance() {
+    public static Fragment newInstance() {
         return new PhotoGalleryFragment();
     }
 
@@ -45,6 +46,7 @@ public class PhotoGalleryFragment extends Fragment {
         setRetainInstance(true);
         setHasOptionsMenu(true);
         new FetchDataAsyncTask(null).execute();
+
 
         Handler responseHandler = new Handler(); // handler in main thread
         thumbnailDownloader = new ThumbnailDownloader<>(responseHandler);
@@ -93,6 +95,13 @@ public class PhotoGalleryFragment extends Fragment {
 
         MenuItem searchItem = menu.findItem(R.id.menu_item_search);
         final SearchView searchView = (SearchView) searchItem.getActionView();
+        MenuItem pollItem = menu.findItem(R.id.menu_item_toggle_polling);
+
+        if (PollService.isServiceAlarmOn(getActivity())) {
+            pollItem.setTitle(R.string.stop_polling);
+        } else {
+            pollItem.setTitle(R.string.start_polling);
+        }
 
         searchView.setOnQueryTextListener(new SearchView.OnQueryTextListener() {
             @Override
@@ -124,11 +133,14 @@ public class PhotoGalleryFragment extends Fragment {
                 QueryPreferences.setPreferencesQuery(getActivity(), null);
                 new FetchDataAsyncTask(null).execute();
                 return true;
+            case R.id.menu_item_toggle_polling:
+                boolean isServiceOn = PollService.isServiceAlarmOn(getActivity());
+                PollService.setServiceAlarm(getActivity(), isServiceOn);
+                getActivity().invalidateOptionsMenu();
+                return true;
             default:
                 return super.onOptionsItemSelected(item);
         }
-
-
     }
 
     private void setupAdapter() {
