@@ -10,10 +10,12 @@ import android.support.annotation.Nullable;
 import android.support.v4.app.Fragment;
 import android.support.v7.widget.GridLayoutManager;
 import android.support.v7.widget.RecyclerView;
+import android.support.v7.widget.SearchView;
 import android.util.Log;
 import android.view.LayoutInflater;
 import android.view.Menu;
 import android.view.MenuInflater;
+import android.view.MenuItem;
 import android.view.View;
 import android.view.ViewGroup;
 import android.widget.ImageView;
@@ -42,7 +44,7 @@ public class PhotoGalleryFragment extends Fragment {
         super.onCreate(savedInstanceState);
         setRetainInstance(true);
         setHasOptionsMenu(true);
-        new FetchDataAsyncTask().execute();
+        new FetchDataAsyncTask(null).execute();
 
         Handler responseHandler = new Handler(); // handler in main thread
         thumbnailDownloader = new ThumbnailDownloader<>(responseHandler);
@@ -88,6 +90,45 @@ public class PhotoGalleryFragment extends Fragment {
     public void onCreateOptionsMenu(Menu menu, MenuInflater inflater) {
         super.onCreateOptionsMenu(menu, inflater);
         inflater.inflate(R.menu.fragment_photo_gallery, menu);
+
+        MenuItem searchItem = menu.findItem(R.id.menu_item_search);
+        final SearchView searchView = (SearchView) searchItem.getActionView();
+
+        searchView.setOnQueryTextListener(new SearchView.OnQueryTextListener() {
+            @Override
+            public boolean onQueryTextSubmit(String query) {
+                QueryPreferences.setPreferencesQuery(getActivity(), query);
+                new FetchDataAsyncTask(query).execute();
+                return true;
+            }
+
+            @Override
+            public boolean onQueryTextChange(String newText) {
+
+                return false;
+            }
+        });
+
+        searchView.setOnSearchClickListener(new View.OnClickListener() {
+            @Override
+            public void onClick(View view) {
+                searchView.setQuery(QueryPreferences.getPreferencesQuery(getActivity()),false);
+            }
+        });
+    }
+
+    @Override
+    public boolean onOptionsItemSelected(MenuItem item) {
+        switch (item.getItemId()) {
+            case R.id.menu_item_clear:
+                QueryPreferences.setPreferencesQuery(getActivity(), null);
+                new FetchDataAsyncTask(null).execute();
+                return true;
+            default:
+                return super.onOptionsItemSelected(item);
+        }
+
+
     }
 
     private void setupAdapter() {
@@ -141,13 +182,22 @@ public class PhotoGalleryFragment extends Fragment {
     }
 
     private class FetchDataAsyncTask extends AsyncTask<Void, Void, List<GalleryItem>> {
+        String query;
+
+        public FetchDataAsyncTask(String query) {
+            this.query = query;
+        }
 
         // Do in background thread
         @Override
         protected List<GalleryItem> doInBackground(Void... voids) {
             Log.d(TAG, "IN BACKGROUND");
 
-            return new ImageFetcher().searchImages("ball");
+            if (query == null) {
+                return new ImageFetcher().fetchRandomImages();
+            } else {
+                return new ImageFetcher().searchImages(query);
+            }
         }
 
         // Do in main thread
